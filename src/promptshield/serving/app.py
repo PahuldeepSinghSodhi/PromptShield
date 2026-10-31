@@ -70,7 +70,7 @@ log.propagate = False
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    app.state.engine = load_engine(settings.ner_backend, settings.ner_model_file)
+    app.state.engine = load_engine(settings.ner_backend, settings.ner_model_file, settings.ner_threads)
     app.state.policy = PolicyEngine.from_yaml()
     log.info("startup", extra={"extra_fields": {"model_version": app.state.engine.model_version}})
     yield

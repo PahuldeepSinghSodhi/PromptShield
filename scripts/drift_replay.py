@@ -3,6 +3,7 @@
     python scripts/drift_replay.py --mode normal  --n 300   # PSI should stay low
     python scripts/drift_replay.py --mode shifted --n 300   # PSI should cross 0.25
 
+"normal" replays held-out test rows (same distribution as the reference).
 "shifted" traffic is code-heavy, long, secret-laden prompts, very unlike the
 customer-support style text the models were trained and referenced on.
 """
@@ -10,11 +11,10 @@ customer-support style text the models were trained and referenced on.
 import argparse
 import random
 import string
+from pathlib import Path
 
 import httpx
 import pandas as pd
-
-from promptshield.data.synth import generate_pii_records
 
 CODE_SNIPPET = '''
 def load_config(path):
@@ -45,7 +45,9 @@ def main() -> None:
 
     rng = random.Random(1)
     if args.mode == "normal":
-        texts = generate_pii_records(args.n, seed=99)["text"].tolist()
+        # held-out test rows: same distribution as the reference (built from val rows)
+        df = pd.read_parquet(Path(__file__).resolve().parents[1] / "data" / "processed" / "ner.parquet")
+        texts = df[df.split == "test"].sample(args.n, random_state=99)["text"].tolist()
     else:
         texts = [shifted_prompt(rng) for _ in range(args.n)]
 

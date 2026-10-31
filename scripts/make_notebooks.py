@@ -108,8 +108,9 @@ per = pd.DataFrame({
     "sklearn": {l: sk_m["test"]["per_entity"][l]["f1-score"] for l in labels},
     "DistilBERT": {l: ner_m["test"]["per_entity"][l]["f1-score"] for l in labels},
 }).sort_values("DistilBERT")
-ax = per.plot.barh(figsize=(7, 4.5), color=["#9aa5b4", "#2f5bea"])
+ax = per.plot.barh(figsize=(8, 4.5), color=["#9aa5b4", "#2f5bea"])
 ax.set_xlabel("entity-level F1 (test)"); ax.set_xlim(0, 1); ax.set_title("Per-entity F1")
+ax.legend(loc="center left", bbox_to_anchor=(1.01, 0.5), frameon=False)
 plt.tight_layout(); plt.savefig(FIG / "per_entity_f1.png"); plt.show()
 per.round(3)
 """),
@@ -135,14 +136,25 @@ bench = json.loads((ROOT / "reports/benchmark.json").read_text())
 pd.DataFrame(bench["summary"]).T
 """),
     code("""
-lat = pd.DataFrame([
-    {"backend": b, "batch": l["batch"], "p95_ms": l["p95_ms"]}
+s = pd.DataFrame(bench["summary"]).T.loc[["pytorch_fp32_cpu", "onnx_fp32", "onnx_int8"]]
+names = ["PyTorch FP32", "ONNX FP32", "ONNX INT8"]
+colors = ["#9aa5b4", "#9aa5b4", "#2f5bea"]
+fig, axes = plt.subplots(1, 2, figsize=(9, 3.2))
+for ax, col, title, unit in [(axes[0], "p95_ms_batch1", "p95 latency, one prompt (CPU)", "ms"),
+                             (axes[1], "size_mb", "Model size", "MB")]:
+    vals = s[col].astype(float).values
+    ax.barh(names, vals, color=colors)
+    for i, v in enumerate(vals):
+        ax.text(v, i, f" {v:.0f} {unit}", va="center", fontsize=9)
+    ax.set_title(title); ax.set_xlim(0, vals.max() * 1.3); ax.invert_yaxis()
+plt.tight_layout(); plt.savefig(FIG / "latency.png"); plt.show()
+"""),
+    code("""
+# throughput by batch size: on CPU, batch 1 wins (ORT already parallelises a single call)
+pd.DataFrame([
+    {"backend": b, "batch": l["batch"], "texts_per_sec": l["texts_per_sec"]}
     for b, r in bench["details"].items() for l in r["latency"]
-]).pivot(index="batch", columns="backend", values="p95_ms")
-ax = lat.plot.bar(figsize=(7, 3.5), color=["#2f5bea", "#9aa5b4", "#1f8a4c"])
-ax.set_ylabel("p95 latency per call (ms)"); ax.set_title("CPU latency by backend and batch size")
-plt.xticks(rotation=0); plt.tight_layout(); plt.savefig(FIG / "latency.png"); plt.show()
-lat
+]).pivot(index="batch", columns="backend", values="texts_per_sec")
 """),
 ]
 

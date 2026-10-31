@@ -4,11 +4,11 @@
 
 | | |
 |---|---|
-| Rows | 68,807 (train 49,469 · val 9,063 · test 10,275) |
-| Sources | ai4privacy `pii-masking-400k`, English subset: 56,103 rows after filtering · synthetic generator: 12,704 rows |
+| Rows | 70,093 (train 48,834 · val 10,404 · test 10,855) |
+| Sources | ai4privacy `pii-masking-400k`, English subset: 56,103 rows after filtering · synthetic generator: 13,990 rows |
 | Labels | PERSON, ADDRESS, ID_NUMBER, FINANCIAL, EMAIL, PHONE, USERNAME, DATE, CREDENTIAL (BIO tagging) |
-| Entities | 99,343 in total; most common PERSON (28k), rarest CREDENTIAL (2.3k) |
-| Text length | median 122 chars, max 1,377 |
+| Rows with no PII | 15,445 (negatives, including 2,000+ technical prompts) |
+| Distinct templates (split groups) | 64,091 |
 
 ### How it was built (`python -m promptshield.data.build`)
 

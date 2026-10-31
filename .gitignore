@@ -16,4 +16,7 @@ __pycache__/
 /reports/runtime/
 
 *.db
+*.db-shm
+*.db-wal
 .env
+artifacts.live-backup/

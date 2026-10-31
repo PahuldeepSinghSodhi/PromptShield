@@ -28,4 +28,4 @@ ENV PROMPTSHIELD_DATABASE_URL=sqlite:////tmp/promptshield.db \
     PORT=8000
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s CMD python -c "import urllib.request,os; urllib.request.urlopen(f'http://localhost:{os.environ[\"PORT\"]}/v1/health')"
-CMD ["sh", "-c", "uvicorn promptshield.serving.app:app --host 0.0.0.0 --port ${PORT} --workers ${WORKERS:-2}"]
+CMD ["sh", "-c", "uvicorn promptshield.serving.app:app --host 0.0.0.0 --port ${PORT} --workers ${WORKERS:-1}"]

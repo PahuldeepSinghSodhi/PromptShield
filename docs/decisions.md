@@ -62,12 +62,57 @@ Writing it out makes every one of these choices visible and testable.
 
 ## 7. ONNX Runtime INT8 for serving
 
-PyTorch is only needed for training. Serving uses ONNX Runtime with dynamic INT8 quantization:
-- the model goes from 261 MB to 66 MB
-- the Docker image has no PyTorch at all
-- CPU latency and accuracy figures are in `reports/benchmark.json` and the README
+PyTorch is only needed for training. Serving uses ONNX Runtime with dynamic INT8 quantization. The model goes from 261 MB to 66 MB, and the Docker image has no PyTorch at all. Numbers are in section 8.
 
-## 8. Privacy by construction
+## 7b. Synthetic data: 20 templates were not enough
+
+With 20 fixed templates and a template-grouped split, test F1 depended on *which 3 templates* were held out:
+
+- One rebuild gave test F1 0.837, with synthetic rows at 0.65 and FINANCIAL at 0.52.
+- In that run, a held-out "Beneficiary: …, A/C …, IFSC …" template was simply unseen phrasing.
+
+The fix was a compositional generator: a random intro, 1–3 PII clauses with 4–11 phrasings per entity type, and a request. That gives about 8,000 distinct sentence skeletons. Results:
+
+- Test F1 rose to **0.946**: FINANCIAL 0.875, ID_NUMBER 0.915.
+- The score now reflects generalization to new combinations, not luck of the split.
+
+The same rebuild added parametric *technical* clean prompts. Before that, the dashboard tagged "S3" in "Our S3 upload fails" as an ADDRESS, because the model had seen only 8 clean prompts in total.
+
+## 7c. Entities never split mid-word
+
+The model sometimes gave the last WordPiece of a word a different label, e.g. `rahul.m@okhdfc` + `bank` as USERNAME. The decoder now merges a piece into the current entity when it continues the same word: an alphanumeric piece directly after an alphanumeric character. That is BERT's own word boundary, since its pre-tokenizer splits punctuation into separate words.
+
+A first attempt glued *any* adjacent piece. That broke on HTML in the data (`Sheffield<br>Name`) and on trailing commas, and the F1-floor regression test caught it. A UPI-address rule was also added, because UPI IDs are high-value in Indian banking prompts.
+
+## 8. CPU serving: measure before optimizing
+
+All measurements were taken on the dev laptop (16-core CPU, 4 ORT threads unless noted). The machine was under varying load, so absolute numbers move between runs; the *ratios* were stable.
+
+| Backend | p95, one prompt | Size | Span F1 |
+|---|---|---|---|
+| PyTorch FP32 | 63–118 ms | 261 MB | 0.947 |
+| ONNX FP32 | 49–71 ms | 261 MB | 0.947 |
+| **ONNX INT8** | **20–24 ms** | **66 MB** | 0.946–0.952 |
+
+INT8 was **2.6–6× faster** than PyTorch across runs, with no accuracy loss: the F1 difference was within ±0.5 points, in both directions.
+
+**Batching did not help.** INT8 throughput was 82.9 texts/s at batch 1 and 47.7 at batch 32, for two reasons:
+- ONNX Runtime already spreads a single call across cores.
+- Mixed-length windows get padded to the longest in the batch.
+
+Length-bucketing the windows raised batch-32 bulk throughput to 127 texts/s, but batch 1 (156 texts/s) stayed best. So the engine defaults to batch 1. Request micro-batching (collecting concurrent requests into one batch) was *not* built, because the data says it would make things slower.
+
+**More workers did not help on this machine.** Locust: 20 users, 30 s, mixed scan / proxy / long-document traffic, SQLite.
+
+| uvicorn workers × ORT threads | req/s | p50 | p95 | failures |
+|---|---|---|---|---|
+| **1 × all cores** | **34.9** | 260 ms | 1.1 s | 0 |
+| 4 × 4 | 11.4 | 680 ms | 2.8 s | 0 |
+| 8 × 2 | 14.7 | 570 ms | 2.5 s | 0 |
+
+The likely causes are SQLite's single-writer lock (every request writes an audit row) and Windows' process model. The container therefore defaults to one worker, with `PROMPTSHIELD_NER_THREADS` configurable. The scaling path to measure next is Postgres + Linux containers behind a load balancer.
+
+## 9. Privacy by construction
 
 - The audit log stores a SHA-256 of the text, entity counts, confidences and latency. It never stores the text or the values.
 - Placeholder maps live in memory for one request only.

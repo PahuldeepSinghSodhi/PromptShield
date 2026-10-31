@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     api_keys: str = "dev-key"  # comma-separated
     ner_backend: str = "onnx"  # onnx | torch | none
     ner_model_file: str = "model.int8.onnx"
+    ner_threads: int = 0  # ONNX Runtime intra-op threads per worker; 0 = all cores
     llm_provider: str = "mock"  # mock | ollama | openai_compatible
     llm_base_url: str = "http://localhost:11434"
     llm_model: str = "llama3.2"

@@ -25,7 +25,9 @@ class NerBackend:
 
     name = "base"
 
-    def __init__(self, model_dir: Path, batch_size: int = 16):
+    # batch 1 is fastest on CPU: ONNX Runtime already parallelises one call across cores,
+    # and batching mixed-length windows only adds padding (see docs/decisions.md)
+    def __init__(self, model_dir: Path, batch_size: int = 1):
         from tokenizers import Tokenizer
 
         self.tokenizer = Tokenizer.from_file(str(model_dir / "tokenizer.json"))
@@ -47,6 +49,9 @@ class NerBackend:
         for ti, t in enumerate(texts):
             for w in make_windows(self.tokenizer, t, self.max_len):
                 jobs.append((ti, w))
+        # length-bucketing: batch windows of similar length so padding doesn't waste compute
+        # (unsorted batches of mixed-length texts were slower per text than batch size 1)
+        jobs.sort(key=lambda j: len(j[1].input_ids))
         per_text_windows: list[list] = [[] for _ in texts]
         per_text_ents: list[list[list[Entity]]] = [[] for _ in texts]
         for b in range(0, len(jobs), self.batch_size):
@@ -130,12 +135,16 @@ class DetectionEngine:
         return self.detect_many([text])[0]
 
 
-def load_engine(backend: str = "onnx", model_file: str = "model.int8.onnx") -> DetectionEngine:
-    """Load whatever artifacts exist; missing ones degrade gracefully (logged)."""
+def load_engine(backend: str = "onnx", model_file: str = "model.int8.onnx", threads: int = 0) -> DetectionEngine:
+    """Load whatever artifacts exist; missing ones degrade gracefully (logged).
+
+    ``threads`` caps ONNX Runtime intra-op threads per process (0 = all cores). With
+    several API workers, cap it so workers don't oversubscribe the CPU.
+    """
     ner = None
     if backend != "none" and (NER_DIR / "tokenizer.json").exists():
         try:
-            ner = TorchNer(NER_DIR) if backend == "torch" else OnnxNer(NER_DIR, model_file=model_file)
+            ner = TorchNer(NER_DIR) if backend == "torch" else OnnxNer(NER_DIR, model_file=model_file, threads=threads)
         except Exception as exc:  # noqa: BLE001 - keep the gateway up with rules + secrets
             log.warning("NER backend %s unavailable: %s", backend, exc)
     secret = None
