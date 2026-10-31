@@ -1,0 +1,113 @@
+{
+  "n_texts": 500,
+  "threads": 4,
+  "summary": {
+    "pytorch_fp32_cpu": {
+      "f1": 0.8895,
+      "f1_delta_vs_pytorch": 0.0,
+      "p95_ms_batch1": 32.45,
+      "speedup_p95_batch1": 1.0,
+      "size_mb": 260.8
+    },
+    "onnx_fp32": {
+      "f1": 0.8895,
+      "f1_delta_vs_pytorch": 0.0,
+      "p95_ms_batch1": 28.06,
+      "speedup_p95_batch1": 1.16,
+      "size_mb": 260.9
+    },
+    "onnx_int8": {
+      "f1": 0.8898,
+      "f1_delta_vs_pytorch": 0.0003,
+      "p95_ms_batch1": 11.38,
+      "speedup_p95_batch1": 2.85,
+      "size_mb": 65.6
+    }
+  },
+  "details": {
+    "pytorch_fp32_cpu": {
+      "accuracy": {
+        "precision": 0.9106,
+        "recall": 0.8693,
+        "f1": 0.8895
+      },
+      "size_mb": 260.8,
+      "latency": [
+        {
+          "batch": 1,
+          "p50_ms": 16.93,
+          "p95_ms": 32.45,
+          "texts_per_sec": 51.9
+        },
+        {
+          "batch": 8,
+          "p50_ms": 188.22,
+          "p95_ms": 322.65,
+          "texts_per_sec": 41.0
+        },
+        {
+          "batch": 32,
+          "p50_ms": 1004.0,
+          "p95_ms": 1344.52,
+          "texts_per_sec": 30.5
+        }
+      ]
+    },
+    "onnx_fp32": {
+      "accuracy": {
+        "precision": 0.9106,
+        "recall": 0.8693,
+        "f1": 0.8895
+      },
+      "size_mb": 260.9,
+      "latency": [
+        {
+          "batch": 1,
+          "p50_ms": 14.01,
+          "p95_ms": 28.06,
+          "texts_per_sec": 63.1
+        },
+        {
+          "batch": 8,
+          "p50_ms": 185.34,
+          "p95_ms": 311.58,
+          "texts_per_sec": 41.2
+        },
+        {
+          "batch": 32,
+          "p50_ms": 1042.55,
+          "p95_ms": 1412.17,
+          "texts_per_sec": 29.1
+        }
+      ]
+    },
+    "onnx_int8": {
+      "accuracy": {
+        "precision": 0.9142,
+        "recall": 0.8667,
+        "f1": 0.8898
+      },
+      "size_mb": 65.6,
+      "latency": [
+        {
+          "batch": 1,
+          "p50_ms": 5.67,
+          "p95_ms": 11.38,
+          "texts_per_sec": 156.0
+        },
+        {
+          "batch": 8,
+          "p50_ms": 70.2,
+          "p95_ms": 129.26,
+          "texts_per_sec": 104.8
+        },
+        {
+          "batch": 32,
+          "p50_ms": 427.95,
+          "p95_ms": 595.38,
+          "texts_per_sec": 70.4
+        }
+      ]
+    }
+  }
+}

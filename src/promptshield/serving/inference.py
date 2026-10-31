@@ -29,10 +29,14 @@ class NerBackend:
         from tokenizers import Tokenizer
 
         self.tokenizer = Tokenizer.from_file(str(model_dir / "tokenizer.json"))
+        # tokenizer.json keeps the training-time truncation (256 tokens); chunking needs the
+        # full token stream or long documents get silently cut to their first window
+        self.tokenizer.no_truncation()
+        self.tokenizer.no_padding()
         meta_path = model_dir / "promptshield.json"
         meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
         self.temperature = float(meta.get("temperature", 1.0))
-        self.max_len = int(meta.get("max_len", 512))
+        self.max_len = int(meta.get("max_len", 256))  # window size = training sequence length
         self.batch_size = batch_size
 
     def logits(self, ids: np.ndarray, mask: np.ndarray) -> np.ndarray:  # (b, seq, labels)

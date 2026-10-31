@@ -64,6 +64,16 @@ def test_person_and_email_invariance(engine, variant):
     assert "PERSON" in labels and "EMAIL" in labels
 
 
+def test_long_document_recall(engine):
+    """Chunking regression: a long document must not lose entities at window boundaries."""
+    unit = ("Customer Rahul Mehta (rahul.mehta@example.com, +91 98765 43210) says the refund "
+            "to account 50100234567812 never arrived. ")
+    doc = unit * 60
+    ents = [e for e in engine.detect(doc) if e.label in {"PERSON", "EMAIL", "PHONE", "FINANCIAL"}]
+    assert len(ents) >= 0.97 * 240
+    assert all(doc[e.start : e.end] == e.text for e in ents)  # offsets map back exactly
+
+
 @pytest.mark.parametrize("seed", range(5))
 def test_secret_detected_in_config(secret_detector, seed):
     ents = secret_detector.detect(f"AWS_ACCESS_KEY_ID={fake_aws_key(seed)}")

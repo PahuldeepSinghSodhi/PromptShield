@@ -205,13 +205,19 @@ def train(args) -> dict:
         "ece_before": expected_calibration_error(test_logits.softmax(-1), test_labels),
         "ece_after": expected_calibration_error((test_logits / temperature).softmax(-1), test_labels),
     }
-    (OUT_DIR / "promptshield.json").write_text(json.dumps({"temperature": temperature, "max_len": 512}))
+    # serving windows must match the training sequence length: on 512-token windows a model
+    # fine-tuned at 256 lost ~14% of entities in long documents (see docs/decisions.md)
+    (OUT_DIR / "promptshield.json").write_text(json.dumps({"temperature": temperature, "max_len": args.max_len}))
 
     summary = {"base_model": BASE_MODEL, "history": history, "test": test_metrics, "calibration": calib,
                "n_train": len(splits["train"]), "device": str(device)}
     METRICS.parent.mkdir(parents=True, exist_ok=True)
-    METRICS.write_text(json.dumps(summary, indent=2))
+    METRICS.write_text(json.dumps(summary, indent=2, default=_json_default))
     return summary
+
+
+def _json_default(o):
+    return o.item() if hasattr(o, "item") else str(o)
 
 
 def main() -> None:
@@ -224,7 +230,9 @@ def main() -> None:
     ap.add_argument("--patience", type=int, default=2)
     ap.add_argument("--seed", type=int, default=42)
     s = train(ap.parse_args())
-    print(json.dumps({k: s[k] for k in ("test", "calibration")}, indent=2)[:3000])
+    t = s["test"]
+    print(json.dumps({"precision": t["precision"], "recall": t["recall"], "f1": t["f1"],
+                      "calibration": s["calibration"], "history": s["history"]}, indent=2, default=_json_default))
 
 
 if __name__ == "__main__":
