@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: promptshield
+      POSTGRES_USER: promptshield
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-locally}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U promptshield"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PROMPTSHIELD_DATABASE_URL: postgresql+psycopg://promptshield:${POSTGRES_PASSWORD:-change-me-locally}@db:5432/promptshield
+      PROMPTSHIELD_API_KEYS: ${PROMPTSHIELD_API_KEYS:-dev-key}
+      PROMPTSHIELD_LLM_PROVIDER: ${PROMPTSHIELD_LLM_PROVIDER:-mock}
+      PROMPTSHIELD_LLM_BASE_URL: ${PROMPTSHIELD_LLM_BASE_URL:-http://host.docker.internal:11434}
+      PROMPTSHIELD_LLM_MODEL: ${PROMPTSHIELD_LLM_MODEL:-llama3.2}
+      PROMPTSHIELD_LLM_API_KEY: ${PROMPTSHIELD_LLM_API_KEY:-}
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdata:

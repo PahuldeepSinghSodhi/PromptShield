@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PromptShield</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm0 2.2 6 2.2V11c0 4-2.6 7.8-6 8.9-3.4-1.1-6-4.9-6-8.9V6.4l6-2.2Z"/></svg>
+      <span>PromptShield</span>
+    </div>
+    <nav role="tablist">
+      <button role="tab" data-tab="playground" aria-selected="true">Playground</button>
+      <button role="tab" data-tab="batch">Batch scan</button>
+      <button role="tab" data-tab="review">Review queue</button>
+      <button role="tab" data-tab="monitoring">Monitoring</button>
+    </nav>
+    <label class="apikey">API key <input id="apiKey" type="password" autocomplete="off" placeholder="X-API-Key"></label>
+  </header>
+
+  <main>
+    <!-- Playground -->
+    <section id="playground" class="tab active">
+      <div class="grid2">
+        <div class="card">
+          <h2>Prompt</h2>
+          <textarea id="prompt" rows="9">Hi, please summarise this complaint. Customer Rahul Mehta (rahul.mehta@example.com, +91 98765 43210) says the refund to account 50100234567812 never arrived.</textarea>
+          <div class="row">
+            <label>Team
+              <select id="team">
+                <option value="">default</option>
+                <option>engineering</option><option>hr</option><option>finance</option>
+              </select>
+            </label>
+            <button id="btnScan" class="secondary">Scan only</button>
+            <button id="btnSend" class="primary">Send through gateway</button>
+          </div>
+          <div class="examples">
+            Try:
+            <button class="chip" data-example="secret">pasted API key</button>
+            <button class="chip" data-example="kyc">KYC details</button>
+            <button class="chip" data-example="clean">clean prompt</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Result <span id="actionBadge" class="badge"></span></h2>
+          <div id="highlighted" class="mono box" aria-live="polite">Detections appear here.</div>
+          <h3>Sent to the LLM</h3>
+          <div id="sent" class="mono box muted">-</div>
+          <h3>Reply shown to the user (placeholders restored)</h3>
+          <div id="reply" class="box muted">-</div>
+          <p id="meta" class="muted small"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Batch -->
+    <section id="batch" class="tab">
+      <div class="card">
+        <h2>Scan a file for sensitive data</h2>
+        <p class="muted">CSV, JSONL or TXT, up to 10 MB. The report lists counts and locations, never the values.</p>
+        <div class="row">
+          <input id="file" type="file" accept=".csv,.jsonl,.ndjson,.txt">
+          <button id="btnUpload" class="primary">Scan file</button>
+          <span id="jobStatus" class="muted"></span>
+        </div>
+      </div>
+      <div id="batchReport" class="grid2"></div>
+    </section>
+
+    <!-- Review -->
+    <section id="review" class="tab">
+      <div class="card">
+        <h2>Low-confidence detections</h2>
+        <p class="muted">Confirm or correct them; corrections feed the retraining pipeline.</p>
+        <div class="tablewrap"><table id="reviewTable">
+          <thead><tr><th>Time</th><th>Team</th><th>Action</th><th>Entities</th><th>Min conf.</th><th>Masked preview</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- Monitoring -->
+    <section id="monitoring" class="tab">
+      <div class="kpis" id="kpis"></div>
+      <div class="grid2">
+        <div class="card"><h2>Requests by action (24 h)</h2><div class="chart"><canvas id="chartTimeline"></canvas></div></div>
+        <div class="card"><h2>Entity types detected</h2><div class="chart"><canvas id="chartEntities"></canvas></div></div>
+      </div>
+      <div class="card">
+        <h2>Drift <span id="driftBadge" class="badge"></span></h2>
+        <div class="tablewrap"><table id="driftTable">
+          <thead><tr><th>Check</th><th>PSI</th><th>KS</th><th>Level</th></tr></thead><tbody></tbody>
+        </table></div>
+        <p class="muted small">PSI &lt; 0.10 stable, 0.10–0.25 moderate, &gt; 0.25 significant shift vs the training reference.</p>
+      </div>
+    </section>
+  </main>
+  <div id="toast" role="status"></div>
+</body>
+</html>

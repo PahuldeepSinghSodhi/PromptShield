@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+*.egg-info/
+
+# data & artifacts are versioned with DVC, not git
+/data/raw/
+/data/interim/
+/data/processed/
+/artifacts/
+/mlruns/
+/mlartifacts/
+/reports/runtime/
+
+*.db
+.env

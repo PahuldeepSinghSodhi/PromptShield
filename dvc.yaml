@@ -1,0 +1,58 @@
+stages:
+  build_dataset:
+    cmd: python -m promptshield.data.build --max-public 60000 --n-synth 15000 --n-secrets 40000
+    deps:
+      - src/promptshield/data
+      - configs/label_map.yaml
+    outs:
+      - data/processed/ner.parquet
+      - data/processed/secrets.parquet
+    metrics:
+      - reports/data_quality.json:
+          cache: false
+
+  train_secret_detector:
+    cmd: python -m promptshield.models.secret_detector
+    deps:
+      - data/processed/secrets.parquet
+      - src/promptshield/models/secret_detector.py
+      - src/promptshield/features/secret_features.py
+    outs:
+      - artifacts/secret_detector.joblib
+    metrics:
+      - reports/secret_detector_metrics.json:
+          cache: false
+
+  train_sk_baseline:
+    cmd: python -m promptshield.models.sk_token_baseline
+    deps:
+      - data/processed/ner.parquet
+      - src/promptshield/models/sk_token_baseline.py
+    outs:
+      - artifacts/sk_token_baseline.joblib
+    metrics:
+      - reports/sk_token_baseline_metrics.json:
+          cache: false
+
+  train_ner:
+    # fine-tune, then export to ONNX FP32 + INT8 into the same directory
+    cmd: python -m promptshield.models.ner_torch --epochs 3 && python -m promptshield.models.export_onnx
+    deps:
+      - data/processed/ner.parquet
+      - src/promptshield/models/ner_torch.py
+      - src/promptshield/models/ner_common.py
+      - src/promptshield/models/export_onnx.py
+    outs:
+      - artifacts/ner
+    metrics:
+      - reports/ner_metrics.json:
+          cache: false
+
+  benchmark:
+    cmd: python -m promptshield.models.benchmark --n 500
+    deps:
+      - artifacts/ner
+      - src/promptshield/serving/inference.py
+    metrics:
+      - reports/benchmark.json:
+          cache: false

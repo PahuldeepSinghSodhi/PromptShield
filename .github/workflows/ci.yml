@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install (CPU, serving + test deps only)
+        run: pip install -e ".[dev]" scipy
+      - name: Lint
+        run: ruff check src tests
+      - name: Train a small secret detector for API tests
+        run: |
+          python -c "
+          from promptshield.data.build import build_secrets
+          from pathlib import Path
+          Path('data/processed').mkdir(parents=True, exist_ok=True)
+          build_secrets(6000, 42).to_parquet('data/processed/secrets.parquet', index=False)"
+          python -m promptshield.models.secret_detector
+      - name: Tests (model tests skip when NER artifacts are absent)
+        run: pytest -q --cov=promptshield --cov-report=term-missing:skip-covered
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    if: hashFiles('artifacts/ner/model.int8.onnx') != ''
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t promptshield:ci .

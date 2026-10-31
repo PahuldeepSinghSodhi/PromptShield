@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>PromptShield settings</title>
+  <style>
+    body { font: 14px/1.5 system-ui, sans-serif; margin: 16px; min-width: 300px; color: #1b1f24; background: #fff; }
+    @media (prefers-color-scheme: dark) { body { color: #e6e9ee; background: #1a1e24; } input { color: inherit; background: #111418; } }
+    label { display: block; margin-bottom: 10px; }
+    input { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #8884; border-radius: 6px; font: inherit; }
+    button { padding: 6px 14px; border-radius: 6px; border: 0; background: #2f5bea; color: #fff; font: inherit; cursor: pointer; }
+    #saved { margin-left: 8px; opacity: .7; }
+  </style>
+</head>
+<body>
+  <h3>PromptShield</h3>
+  <label>Gateway URL <input id="apiUrl"></label>
+  <label>API key <input id="apiKey" type="password"></label>
+  <label>Team (optional) <input id="team" placeholder="engineering, finance, hr…"></label>
+  <button id="save">Save</button><span id="saved"></span>
+  <script src="options.js"></script>
+</body>
+</html>

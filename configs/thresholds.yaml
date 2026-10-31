@@ -1,0 +1,12 @@
+# Regression gate for promoting a retrained model. Values are set after the first
+# real training run (see reports/) with a small safety margin below what we measured.
+gate:
+  min_ner_f1: 0.85
+  min_secret_precision: 0.97
+  min_secret_recall: 0.90
+  max_p95_ms: 60          # ONNX INT8, single short prompt, 4 CPU threads
+  max_f1_drop_vs_current: 0.01
+
+drift:
+  psi_moderate: 0.10
+  psi_significant: 0.25

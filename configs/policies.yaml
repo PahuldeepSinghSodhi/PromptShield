@@ -1,0 +1,32 @@
+# What the gateway does with each detected entity type.
+#   allow  - forward unchanged (still counted in the audit log)
+#   redact - replace with a reversible placeholder such as [EMAIL_1]
+#   block  - reject the whole request
+# Teams can override the default policy.
+
+default:
+  min_confidence: 0.50          # detections below this are ignored
+  review_below: 0.80            # detections below this go to the review queue
+  actions:
+    PERSON: redact
+    EMAIL: redact
+    PHONE: redact
+    ADDRESS: redact
+    USERNAME: redact
+    DATE: allow
+    ID_NUMBER: redact
+    FINANCIAL: redact
+    CREDENTIAL: block
+    SECRET: block
+
+teams:
+  engineering:
+    actions:
+      USERNAME: allow           # usernames are routine in debugging prompts
+  hr:
+    actions:
+      DATE: redact              # dates of birth are sensitive in HR data
+      ID_NUMBER: block
+  finance:
+    actions:
+      FINANCIAL: block

@@ -1,0 +1,18 @@
+#promptshield-panel {
+  position: fixed; right: 20px; bottom: 20px; z-index: 2147483647; width: min(420px, calc(100vw - 32px));
+  background: #ffffff; color: #1b1f24; border: 1px solid #dde2e8; border-left: 4px solid #c53030;
+  border-radius: 10px; box-shadow: 0 8px 30px rgba(0, 0, 0, .18); padding: 14px 16px;
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  #promptshield-panel { background: #1a1e24; color: #e6e9ee; border-color: #2c323b; border-left-color: #ff6b6b; }
+}
+#promptshield-panel .ps-title { font-weight: 700; margin-bottom: 4px; }
+#promptshield-panel .ps-summary { opacity: .8; margin-bottom: 8px; }
+#promptshield-panel .ps-preview { font-family: ui-monospace, Consolas, monospace; font-size: 12px; white-space: pre-wrap;
+  max-height: 140px; overflow: auto; background: rgba(127, 127, 127, .1); border-radius: 6px; padding: 8px; }
+#promptshield-panel .ps-note { margin: 6px 0; }
+#promptshield-panel .ps-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; flex-wrap: wrap; }
+#promptshield-panel button { font: inherit; border-radius: 6px; padding: 6px 12px; cursor: pointer;
+  border: 1px solid rgba(127, 127, 127, .4); background: transparent; color: inherit; }
+#promptshield-panel button.ps-primary { background: #2f5bea; border-color: #2f5bea; color: #fff; }

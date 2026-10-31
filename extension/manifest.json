@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "PromptShield",
+  "version": "0.1.0",
+  "description": "Warns before you send personal data or secrets to an AI chat site, and can redact them.",
+  "permissions": ["storage"],
+  "host_permissions": ["http://localhost:8000/*"],
+  "optional_host_permissions": ["https://*/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://claude.ai/*", "https://chatgpt.com/*", "https://gemini.google.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "options.html",
+  "action": { "default_title": "PromptShield", "default_popup": "options.html" }
+}

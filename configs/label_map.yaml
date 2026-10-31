@@ -1,0 +1,22 @@
+# Maps every source dataset's entity names onto PromptShield's unified label set.
+# Source labels not listed here are dropped (treated as non-sensitive) and reported
+# in the data-quality report so nothing is silently ignored.
+#
+# Adjacent spans that map to the same unified label and are separated only by
+# whitespace/punctuation are merged (e.g. GIVENNAME + SURNAME -> one PERSON).
+
+merge_adjacent_gap: "^[\\s,.\\-/]{0,3}$"
+
+unified:
+  PERSON: [GIVENNAME, SURNAME, FIRSTNAME, LASTNAME, MIDDLENAME, PREFIX_NAME, NAME, PERSON]
+  EMAIL: [EMAIL]
+  PHONE: [TELEPHONENUM, PHONENUMBER, PHONE, PHONEIMEI]
+  ADDRESS: [STREET, STREETADDRESS, BUILDINGNUM, BUILDINGNUMBER, CITY, ZIPCODE, STATE,
+            SECONDARYADDRESS, COUNTY, ADDRESS]
+  USERNAME: [USERNAME, USERAGENT_ID, ACCOUNTNAME]
+  DATE: [DATEOFBIRTH, DOB, DATE]
+  ID_NUMBER: [IDCARDNUM, DRIVERLICENSENUM, SOCIALNUM, SSN, TAXNUM, PASSPORTNUM,
+              PASSPORT, VEHICLEVIN, ID_NUMBER]
+  FINANCIAL: [CREDITCARDNUMBER, ACCOUNTNUM, ACCOUNTNUMBER, IBAN, BIC, CREDITCARDCVV,
+              PIN, MASKEDNUMBER, FINANCIAL]
+  CREDENTIAL: [PASSWORD, CREDENTIAL]
