@@ -12,10 +12,10 @@ from promptshield.features.chunking import make_windows, merge_window_entities
 from promptshield.models.fusion import fuse
 from promptshield.models.ner_common import decode, softmax
 from promptshield.models.rules import detect_rules
+from promptshield.paths import ROOT
 from promptshield.types import Entity
 
 log = logging.getLogger(__name__)
-ROOT = Path(__file__).resolve().parents[3]
 NER_DIR = ROOT / "artifacts" / "ner"
 SECRET_PATH = ROOT / "artifacts" / "secret_detector.joblib"
 

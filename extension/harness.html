@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Extension test harness</title>
+  <!-- Loads the real extension content script + styles. Only chrome.runtime is stubbed:
+       it forwards to /v1/redact like extension/background.js does. -->
+  <link rel="stylesheet" href="/ext/content.css">
+  <style>
+    body { font: 15px/1.5 system-ui, sans-serif; margin: 24px; background: #fff; color: #1b1f24; }
+    textarea { width: min(640px, 100%); height: 120px; font: inherit; }
+  </style>
+  <script>
+    window.chrome = {
+      runtime: {
+        sendMessage(msg, cb) {
+          fetch("/v1/redact", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-API-Key": "dev-key" },
+            body: JSON.stringify({ text: msg.text }),
+          }).then(async (r) => cb(r.ok ? { ok: true, result: await r.json() } : { ok: false, error: r.status }))
+            .catch((e) => cb({ ok: false, error: String(e) }));
+        },
+      },
+    };
+    // test helper: simulate a paste of `text` into the chat box
+    window.simulatePaste = (text) => {
+      const box = document.getElementById("chat");
+      box.focus();
+      const dt = new DataTransfer();
+      dt.setData("text/plain", text);
+      box.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true }));
+    };
+  </script>
+  <script src="/ext/content.js" defer></script>
+</head>
+<body>
+  <h1>Chat input (simulated AI site)</h1>
+  <textarea id="chat" placeholder="Paste here"></textarea>
+</body>
+</html>

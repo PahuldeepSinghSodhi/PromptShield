@@ -12,12 +12,12 @@ import shutil
 import subprocess
 import sys
 from datetime import UTC, date, datetime, timedelta
-from pathlib import Path
 
 import pandas as pd
 from prefect import flow, get_run_logger, task
 
-ROOT = Path(__file__).resolve().parents[3]
+from promptshield.paths import ROOT
+
 PY = sys.executable
 
 

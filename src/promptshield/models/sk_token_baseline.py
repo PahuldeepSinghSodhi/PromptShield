@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import re
-from pathlib import Path
 
 import joblib
 import numpy as np
@@ -20,7 +19,8 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import FunctionTransformer
 
-ROOT = Path(__file__).resolve().parents[3]
+from promptshield.paths import ROOT
+
 DATA = ROOT / "data" / "processed" / "ner.parquet"
 ARTIFACT = ROOT / "artifacts" / "sk_token_baseline.joblib"
 METRICS = ROOT / "reports" / "sk_token_baseline_metrics.json"

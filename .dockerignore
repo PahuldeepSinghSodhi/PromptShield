@@ -1,0 +1,19 @@
+.git
+.venv
+.claude
+data
+notebooks
+mlruns
+mlartifacts
+reports/runtime
+reports/figures
+**/__pycache__
+*.db
+*.db-*
+.env
+# serving needs only the INT8 ONNX model + tokenizer; skip the FP32/PyTorch weights
+artifacts/ner/model.onnx
+artifacts/ner/*.safetensors
+artifacts/ner/config.json
+artifacts/sk_token_baseline.joblib
+artifacts.live-backup

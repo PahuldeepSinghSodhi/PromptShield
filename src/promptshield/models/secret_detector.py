@@ -23,9 +23,9 @@ from sklearn.preprocessing import StandardScaler
 
 from promptshield.data.synth import generate_secret_challenge
 from promptshield.features.secret_features import FEATURE_NAMES, Candidate, extract_candidates, featurize
+from promptshield.paths import ROOT
 from promptshield.types import Entity
 
-ROOT = Path(__file__).resolve().parents[3]
 DATA = ROOT / "data" / "processed" / "secrets.parquet"
 ARTIFACT = ROOT / "artifacts" / "secret_detector.joblib"
 METRICS = ROOT / "reports" / "secret_detector_metrics.json"

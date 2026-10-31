@@ -8,10 +8,11 @@ from pathlib import Path
 
 import yaml
 
+from promptshield.paths import ROOT
 from promptshield.policy.placeholders import PlaceholderMap
 from promptshield.types import Entity
 
-DEFAULT_POLICY_PATH = Path(__file__).resolve().parents[3] / "configs" / "policies.yaml"
+DEFAULT_POLICY_PATH = ROOT / "configs" / "policies.yaml"
 
 
 class Action(StrEnum):

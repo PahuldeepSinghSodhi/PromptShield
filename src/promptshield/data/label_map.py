@@ -8,7 +8,9 @@ from pathlib import Path
 
 import yaml
 
-LABEL_MAP_PATH = Path(__file__).resolve().parents[3] / "configs" / "label_map.yaml"
+from promptshield.paths import ROOT
+
+LABEL_MAP_PATH = ROOT / "configs" / "label_map.yaml"
 
 
 class LabelMapper:

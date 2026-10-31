@@ -10,7 +10,6 @@ import json
 import math
 import random
 import time
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -21,8 +20,8 @@ from torch.utils.data import DataLoader, Dataset
 from transformers import AutoModelForTokenClassification, AutoTokenizer, get_linear_schedule_with_warmup
 
 from promptshield.models.ner_common import BIO_LABELS, ID2LABEL, IGNORE, LABEL2ID, align_labels
+from promptshield.paths import ROOT
 
-ROOT = Path(__file__).resolve().parents[3]
 DATA = ROOT / "data" / "processed" / "ner.parquet"
 OUT_DIR = ROOT / "artifacts" / "ner"
 METRICS = ROOT / "reports" / "ner_metrics.json"

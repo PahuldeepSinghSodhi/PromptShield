@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 
 import pandas as pd
 
@@ -17,8 +16,8 @@ from promptshield.data.label_map import LabelMapper
 from promptshield.data.split import grouped_split, stratified_split
 from promptshield.data.synth import generate_pii_records, generate_secret_texts
 from promptshield.data.validate import check_no_leakage, quality_report, validate_records
+from promptshield.paths import ROOT
 
-ROOT = Path(__file__).resolve().parents[3]
 OUT = ROOT / "data" / "processed"
 REPORTS = ROOT / "reports"
 

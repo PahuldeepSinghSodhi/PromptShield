@@ -17,8 +17,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from promptshield.db.models import Feedback
+from promptshield.paths import ROOT
 
-ROOT = Path(__file__).resolve().parents[3]
 THRESHOLDS = ROOT / "configs" / "thresholds.yaml"
 FEEDBACK_PARQUET = ROOT / "data" / "processed" / "feedback.parquet"
 REPORT_DIR = ROOT / "reports" / "retrain"

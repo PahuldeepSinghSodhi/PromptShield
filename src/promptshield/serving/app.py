@@ -12,7 +12,6 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
-from pathlib import Path
 
 import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, Request, UploadFile
@@ -27,6 +26,7 @@ from promptshield.config import settings
 from promptshield.db.models import Event, Feedback, ScanJob
 from promptshield.db.session import SessionLocal, get_session, init_db
 from promptshield.monitoring import service as monitoring
+from promptshield.paths import ROOT
 from promptshield.pipelines.batch_scan import read_table, scan_table
 from promptshield.policy.engine import Action, PolicyEngine
 from promptshield.serving.inference import load_engine
@@ -46,8 +46,6 @@ from promptshield.serving.schemas import (
     ScanResponse,
 )
 from promptshield.serving.security import authorized
-
-ROOT = Path(__file__).resolve().parents[3]
 
 
 # ------------------------------------------------------------------ logging

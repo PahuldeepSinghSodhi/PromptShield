@@ -24,6 +24,13 @@ never arrived. Please summarise.
 
 The LLM replies about `[PERSON_1]`, and PromptShield puts the real name back before the analyst sees it. A prompt containing an API key or password is **blocked** outright. Every decision is logged for compliance, with **no raw text stored**.
 
+![Playground: detection, what was sent to the LLM, and the restored reply](docs/images/playground_redact.png)
+
+<p>
+  <img src="docs/images/playground_block.png" width="49%" alt="A pasted AWS key is blocked">
+  <img src="docs/images/monitoring.png" width="49%" alt="Monitoring: volumes, entity mix and drift alert">
+</p>
+
 ## Results
 
 | | |
@@ -100,6 +107,8 @@ Or reproduce the whole pipeline with `dvc repro`. With Docker (API + Postgres):
 ```bash
 docker compose up --build
 ```
+
+Browser extension: load `extension/` unpacked in `chrome://extensions` (Developer mode). To try the paste flow without installing it, run `python scripts/extension_harness.py` and open `http://localhost:8001/harness`. That page runs the real content script against the API.
 
 ```bash
 pytest -q                                             # 67 tests

@@ -12,14 +12,13 @@ from __future__ import annotations
 import argparse
 import json
 import time
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from promptshield.paths import ROOT
 from promptshield.serving.inference import NER_DIR, OnnxNer, TorchNer
 
-ROOT = Path(__file__).resolve().parents[3]
 DATA = ROOT / "data" / "processed" / "ner.parquet"
 OUT = ROOT / "reports" / "benchmark.json"
 

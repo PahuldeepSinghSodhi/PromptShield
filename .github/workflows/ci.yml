@@ -16,22 +16,49 @@ jobs:
       - name: Install (CPU, serving + test deps only)
         run: pip install -e ".[dev]" scipy
       - name: Lint
-        run: ruff check src tests
-      - name: Train a small secret detector for API tests
+        run: ruff check src tests scripts load_tests
+      - name: Train a small secret detector for the API tests
         run: |
-          python -c "
-          from promptshield.data.build import build_secrets
-          from pathlib import Path
-          Path('data/processed').mkdir(parents=True, exist_ok=True)
-          build_secrets(6000, 42).to_parquet('data/processed/secrets.parquet', index=False)"
+          mkdir -p data/processed
+          python -c "from promptshield.data.build import build_secrets; build_secrets(6000, 42).to_parquet('data/processed/secrets.parquet', index=False)"
           python -m promptshield.models.secret_detector
-      - name: Tests (model tests skip when NER artifacts are absent)
+      - name: Tests (NER model tests skip: the 66 MB model is not in git)
         run: pytest -q --cov=promptshield --cov-report=term-missing:skip-covered
 
   docker:
+    # builds the image and smoke-tests the API against Postgres via docker compose
     runs-on: ubuntu-latest
     needs: test
-    if: hashFiles('artifacts/ner/model.int8.onnx') != ''
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t promptshield:ci .
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Train the secret detector artifact baked into the image
+        run: |
+          pip install -e . scipy
+          mkdir -p data/processed
+          python -c "from promptshield.data.build import build_secrets; build_secrets(6000, 42).to_parquet('data/processed/secrets.parquet', index=False)"
+          python -m promptshield.models.secret_detector
+      - name: Start API + Postgres
+        run: docker compose up -d --build
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 60); do curl -sf localhost:8000/v1/health && break; sleep 2; done
+          curl -sf localhost:8000/v1/health | tee health.json
+          grep -q '"db":"ok"' health.json
+          curl -sf localhost:8000/v1/redact -H 'X-API-Key: dev-key' -H 'Content-Type: application/json' \
+            -d '{"text":"Mail rahul@example.com about PAN ABCPM1234K"}' | tee redact.json
+          grep -q '\[EMAIL_1\]' redact.json
+          KEY="AKIA$(head -c 64 /dev/urandom | tr -dc 'A-Z2-7' | head -c 16)"
+          curl -sf localhost:8000/v1/proxy/chat -H 'X-API-Key: dev-key' -H 'Content-Type: application/json' \
+            -d "{\"messages\":[{\"role\":\"user\",\"content\":\"AWS_ACCESS_KEY_ID=$KEY\"}]}" | tee proxy.json
+          grep -q '"action":"block"' proxy.json
+          docker compose exec -T db psql -U promptshield -d promptshield -tAc \
+            "select endpoint, action from events order by id" | tee events.txt
+          grep -q 'redact|redact' events.txt && grep -q 'proxy|block' events.txt
+          curl -sf localhost:8000/ | grep -q PromptShield
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs api

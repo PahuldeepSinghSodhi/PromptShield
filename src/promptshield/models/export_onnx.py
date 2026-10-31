@@ -10,7 +10,8 @@ from pathlib import Path
 import torch
 from transformers import AutoModelForTokenClassification
 
-ROOT = Path(__file__).resolve().parents[3]
+from promptshield.paths import ROOT
+
 NER_DIR = ROOT / "artifacts" / "ner"
 
 

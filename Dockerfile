@@ -18,12 +18,14 @@ COPY --from=build /venv /venv
 COPY --chown=app:app src ./src
 COPY --chown=app:app configs ./configs
 COPY --chown=app:app dashboard ./dashboard
-# model artifacts: tokenizer, INT8 ONNX model, secret detector, drift reference
-COPY --chown=app:app artifacts/ner/tokenizer.json artifacts/ner/tokenizer_config.json artifacts/ner/promptshield.json artifacts/ner/model.int8.onnx ./artifacts/ner/
-COPY --chown=app:app artifacts/secret_detector.joblib artifacts/drift_reference.json ./artifacts/
-COPY --chown=app:app reports/*.json ./reports/
+# model artifacts (filtered by .dockerignore: INT8 ONNX + tokenizer, secret detector,
+# drift reference). Whatever is missing degrades gracefully, e.g. CI builds the image
+# with only the secret detector and the API runs on secrets + rules.
+COPY --chown=app:app artifacts ./artifacts
+COPY --chown=app:app reports ./reports
 USER app
-ENV PROMPTSHIELD_DATABASE_URL=sqlite:////tmp/promptshield.db \
+ENV PROMPTSHIELD_HOME=/app \
+    PROMPTSHIELD_DATABASE_URL=sqlite:////tmp/promptshield.db \
     PROMPTSHIELD_NER_BACKEND=onnx \
     PORT=8000
 EXPOSE 8000

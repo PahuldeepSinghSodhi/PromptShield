@@ -14,9 +14,9 @@ from sqlalchemy.orm import Session
 
 from promptshield.db.models import Event
 from promptshield.monitoring.drift import ks_statistic, psi, psi_from_counts, psi_level
+from promptshield.paths import ROOT
 from promptshield.types import ENTITY_LABELS
 
-ROOT = Path(__file__).resolve().parents[3]
 REFERENCE_PATH = ROOT / "artifacts" / "drift_reference.json"
 
 
