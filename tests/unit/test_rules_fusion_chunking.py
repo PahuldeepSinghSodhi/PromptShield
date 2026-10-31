@@ -29,6 +29,26 @@ def test_pan_rule():
     assert any(e.label == "ID_NUMBER" and e.text == pan for e in detect_rules(f"PAN {pan}"))
 
 
+def test_upi_rule_and_not_email():
+    ents = detect_rules("pay rahul.m@okhdfcbank today, or mail rahul@example.com")
+    labels = {(e.text, e.label) for e in ents}
+    assert ("rahul.m@okhdfcbank", "FINANCIAL") in labels
+    assert ("rahul@example.com", "EMAIL") in labels
+    assert ("rahul.m@okhdfcbank", "EMAIL") not in labels
+
+
+def test_decode_never_splits_mid_word():
+    # "pay abc@okhdfcbank" with word pieces: pay | abc | @ | ok | ##hdfc | ##bank
+    text = "pay abc@okhdfcbank"
+    offsets = np.array([(0, 0), (0, 3), (4, 7), (7, 8), (8, 10), (10, 14), (14, 18), (0, 0)])
+    tags = ["O", "O", "B-FINANCIAL", "I-FINANCIAL", "I-FINANCIAL", "I-FINANCIAL", "B-USERNAME", "O"]
+    probs = np.zeros((len(tags), len(BIO_LABELS)))
+    for i, lab in enumerate(tags):
+        probs[i, LABEL2ID[lab]] = 1.0
+    ents = decode(text, offsets, probs)
+    assert [(e.label, e.text) for e in ents] == [("FINANCIAL", "abc@okhdfcbank")]
+
+
 def test_fusion_prefers_secret_over_overlap():
     a = Entity(0, 10, "USERNAME", 0.99, "ner")
     b = Entity(2, 12, "SECRET", 0.90, "secret")
@@ -38,7 +58,7 @@ def test_fusion_prefers_secret_over_overlap():
 
 
 def test_align_labels_bio():
-    text = "Hi Rahul Mehta"
+    # "Hi Rahul Mehta" -> [CLS] Hi Rahul Mehta [SEP]
     offsets = [(0, 0), (0, 2), (3, 8), (9, 14), (0, 0)]
     ids = align_labels(offsets, [{"start": 3, "end": 14, "label": "PERSON"}])
     assert ids == [-100, LABEL2ID["O"], LABEL2ID["B-PERSON"], LABEL2ID["I-PERSON"], -100]

@@ -15,7 +15,12 @@
 1. **Ingest:** a seeded 60,000-row sample of the English rows from `ai4privacy/pii-masking-400k`, all splits.
 2. **Label unification** (`configs/label_map.yaml`): the 17 source labels map onto 9 unified labels. Adjacent same-label spans separated only by punctuation or whitespace are merged (`GIVENNAME`+`SURNAME` → one `PERSON`). Unmapped labels are counted in the quality report; in this build there were none.
 3. **Noise filter:** about 30% of the source's English rows have an empty privacy mask. Some of them still contain identifiers, such as unlabeled 16-digit account numbers. Training on those as "no PII" would teach the model to miss them, so **3,896 unlabeled rows containing long digit runs or emails were dropped**. The remaining unlabeled rows stay in as genuine negatives.
-4. **Synthetic records** (`data/synth.py`): Indian and international formats the public set under-represents. These cover PAN, Aadhaar-style IDs (Verhoeff-valid, fake), IFSC, UPI IDs, +91 phone numbers and account numbers, written as business-style prompts plus clean prompts. Every value comes from Faker or a random generator.
+4. **Synthetic records** (`data/synth.py`): Indian and international formats the public set under-represents. These cover PAN, Aadhaar-style IDs (Verhoeff-valid, fake), IFSC, UPI IDs, +91 phone numbers and account numbers. Every value comes from Faker or a random generator. There are three kinds of record:
+   - **Compositional (55%):** random intro + 1–3 PII clauses (4–11 phrasings per entity type) + a request. This gives about 8,000 distinct sentence skeletons.
+   - **Fixed business templates (30%):** 20 hand-written prompts.
+   - **Clean prompts (15%):** parametric technical and business prompts with no PII ("Our S3 upload fails with AccessDenied…"). They teach the model that short codes like S3, EC2, v2 and P1 are not addresses or IDs.
+
+   The first version used only the 20 fixed templates. With the grouped split, the score then depended on which 3 templates happened to be held out: synthetic test F1 was 0.65 while public data scored 0.91. The compositional generator removes that brittleness.
 5. **Cleaning:** per-character NFKC normalization that re-maps span offsets; removing zero-width characters; deduplicating on text.
 6. **Validation** (pandera):
    - spans fall inside the text, sorted, with no overlaps

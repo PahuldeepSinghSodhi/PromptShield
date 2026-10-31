@@ -48,7 +48,9 @@ def test_synth_records_are_valid_and_split_has_no_leakage():
 def test_validation_rejects_bad_spans():
     df = pd.DataFrame([{"text": "abc", "spans": [{"start": 2, "end": 9, "label": "PERSON"}],
                         "source": "synth", "template_id": "t"}])
-    with pytest.raises(Exception):
+    import pandera.errors
+
+    with pytest.raises(pandera.errors.SchemaErrors):
         validate_records(df)
 
 

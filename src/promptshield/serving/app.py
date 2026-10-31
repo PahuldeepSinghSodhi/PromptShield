@@ -32,8 +32,18 @@ from promptshield.policy.engine import Action, PolicyEngine
 from promptshield.serving.inference import load_engine
 from promptshield.serving.providers import get_provider
 from promptshield.serving.schemas import (
-    ChatMessage, EntityOut, FeedbackOut, FeedbackRequest, HealthOut, JobOut, ProxyRequest,
-    ProxyResponse, RedactResponse, ReviewItem, ScanRequest, ScanResponse,
+    ChatMessage,
+    EntityOut,
+    FeedbackOut,
+    FeedbackRequest,
+    HealthOut,
+    JobOut,
+    ProxyRequest,
+    ProxyResponse,
+    RedactResponse,
+    ReviewItem,
+    ScanRequest,
+    ScanResponse,
 )
 from promptshield.serving.security import authorized
 

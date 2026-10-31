@@ -34,7 +34,8 @@ def span_f1(gold: list[list[dict]], pred: list[list]) -> dict:
         fn += len(gs - ps)
     prec = tp / max(1, tp + fp)
     rec = tp / max(1, tp + fn)
-    return {"precision": round(prec, 4), "recall": round(rec, 4), "f1": round(2 * prec * rec / max(1e-9, prec + rec), 4)}
+    f1 = 2 * prec * rec / max(1e-9, prec + rec)
+    return {"precision": round(prec, 4), "recall": round(rec, 4), "f1": round(f1, 4)}
 
 
 def latency(backend, texts: list[str], batch: int, repeats: int = 3) -> dict:
@@ -84,8 +85,15 @@ def main() -> None:
             torch.set_num_threads(args.threads)
         b = make()
         preds = b.detect_many(texts)
+        sources = test["source"].tolist()
+        per_source = {
+            src: span_f1([g for g, s in zip(gold, sources, strict=True) if s == src],
+                         [p for p, s in zip(preds, sources, strict=True) if s == src])
+            for src in sorted(set(sources))
+        }
         results[name] = {
             "accuracy": span_f1(gold, preds),
+            "per_source": per_source,
             "size_mb": round(sizes[name] / 1e6, 1),
             "latency": [latency(b, texts[:128], bs) for bs in (1, 8, 32)],
         }
@@ -95,6 +103,7 @@ def main() -> None:
     summary = {
         name: {
             "f1": r["accuracy"]["f1"],
+            "f1_by_source": {s: v["f1"] for s, v in r["per_source"].items()},
             "f1_delta_vs_pytorch": round(r["accuracy"]["f1"] - base["accuracy"]["f1"], 4),
             "p95_ms_batch1": r["latency"][0]["p95_ms"],
             "speedup_p95_batch1": round(base["latency"][0]["p95_ms"] / r["latency"][0]["p95_ms"], 2),

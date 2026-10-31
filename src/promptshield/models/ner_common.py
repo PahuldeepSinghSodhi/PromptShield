@@ -67,18 +67,28 @@ def decode(
                 Entity(s + char_offset, e + char_offset, cur[0], float(np.mean(cur[3])), "ner", text[s:e])
             )
 
-    for (s, e), p, c in zip(offsets.tolist(), pred.tolist(), conf.tolist(), strict=True):
-        if s == e:
-            continue
+    toks = [
+        (s, e, p, c)
+        for (s, e), p, c in zip(offsets.tolist(), pred.tolist(), conf.tolist(), strict=True)
+        if s != e
+    ]
+    for s, e, p, c in toks:
         tag = ID2LABEL[p]
+        # A WordPiece continuation ("##bank" in "okhdfcbank") always joins the current
+        # entity, whatever label the model gave it, so entities never split mid-word.
+        # BERT's pre-tokenizer splits punctuation into its own words, so "same word" means
+        # an alphanumeric piece directly after an alphanumeric character: HTML such as
+        # "Sheffield<br>" and trailing commas stay outside the entity.
+        if cur is not None and s == cur[2] and s > 0 and text[s - 1].isalnum() and text[s].isalnum():
+            cur[2] = e
+            cur[3].append(c)
+            continue
         if tag == "O":
             flush()
             cur = None
             continue
         prefix, lab = tag.split("-", 1)
-        # continue the current entity on I- of the same type, or on a sub-word directly attached
-        attached = cur is not None and s == cur[2]
-        if cur is not None and cur[0] == lab and (prefix == "I" or attached):
+        if cur is not None and cur[0] == lab and prefix == "I":
             cur[2] = e
             cur[3].append(c)
         else:

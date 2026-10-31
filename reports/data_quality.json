@@ -1,46 +1,46 @@
 {
-  "rows": 68807,
+  "rows": 70093,
   "by_source": {
     "ai4privacy": 56103,
-    "synth": 12704
+    "synth": 13990
   },
   "by_split": {
-    "train": 49469,
-    "test": 10275,
-    "val": 9063
+    "train": 48834,
+    "test": 10855,
+    "val": 10404
   },
-  "rows_without_entities": 14250,
+  "rows_without_entities": 15445,
   "entity_counts": {
-    "PERSON": 28161,
-    "ADDRESS": 17598,
-    "ID_NUMBER": 12397,
-    "FINANCIAL": 9151,
-    "EMAIL": 8956,
-    "PHONE": 8240,
-    "USERNAME": 7663,
-    "DATE": 4895,
+    "PERSON": 26580,
+    "ADDRESS": 17978,
+    "ID_NUMBER": 12730,
+    "USERNAME": 8985,
+    "EMAIL": 8946,
+    "FINANCIAL": 8464,
+    "PHONE": 7826,
+    "DATE": 5717,
     "CREDENTIAL": 2282
   },
   "text_len_chars": {
-    "count": 68807.0,
+    "count": 70093.0,
     "mean": 139.9,
-    "std": 65.3,
+    "std": 65.2,
     "min": 12.0,
-    "25%": 88.0,
-    "50%": 122.0,
-    "75%": 175.0,
+    "25%": 92.0,
+    "50%": 124.0,
+    "75%": 174.0,
     "max": 1377.0
   },
-  "n_templates": 56115,
+  "n_templates": 64091,
   "unmapped_source_labels": {},
   "dropped_unlabeled_rows_with_identifiers": 3896,
   "secrets": {
-    "rows": 38752,
-    "positive_rate": 0.463,
+    "rows": 38227,
+    "positive_rate": 0.474,
     "by_split": {
-      "train": 27238,
-      "test": 6217,
-      "val": 5297
+      "train": 26758,
+      "test": 5735,
+      "val": 5734
     }
   }
 }

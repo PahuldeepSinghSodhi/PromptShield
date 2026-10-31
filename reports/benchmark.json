@@ -1,111 +1,159 @@
 {
-  "n_texts": 500,
+  "n_texts": 1000,
   "threads": 4,
   "summary": {
     "pytorch_fp32_cpu": {
-      "f1": 0.8895,
+      "f1": 0.9409,
+      "f1_by_source": {
+        "ai4privacy": 0.9189,
+        "synth": 0.9853
+      },
       "f1_delta_vs_pytorch": 0.0,
-      "p95_ms_batch1": 32.45,
+      "p95_ms_batch1": 67.53,
       "speedup_p95_batch1": 1.0,
       "size_mb": 260.8
     },
     "onnx_fp32": {
-      "f1": 0.8895,
+      "f1": 0.9409,
+      "f1_by_source": {
+        "ai4privacy": 0.9189,
+        "synth": 0.9853
+      },
       "f1_delta_vs_pytorch": 0.0,
-      "p95_ms_batch1": 28.06,
+      "p95_ms_batch1": 58.02,
       "speedup_p95_batch1": 1.16,
       "size_mb": 260.9
     },
     "onnx_int8": {
-      "f1": 0.8898,
-      "f1_delta_vs_pytorch": 0.0003,
-      "p95_ms_batch1": 11.38,
-      "speedup_p95_batch1": 2.85,
+      "f1": 0.9479,
+      "f1_by_source": {
+        "ai4privacy": 0.9273,
+        "synth": 0.9895
+      },
+      "f1_delta_vs_pytorch": 0.007,
+      "p95_ms_batch1": 24.42,
+      "speedup_p95_batch1": 2.77,
       "size_mb": 65.6
     }
   },
   "details": {
     "pytorch_fp32_cpu": {
       "accuracy": {
-        "precision": 0.9106,
-        "recall": 0.8693,
-        "f1": 0.8895
+        "precision": 0.9235,
+        "recall": 0.9589,
+        "f1": 0.9409
+      },
+      "per_source": {
+        "ai4privacy": {
+          "precision": 0.8975,
+          "recall": 0.9414,
+          "f1": 0.9189
+        },
+        "synth": {
+          "precision": 0.9771,
+          "recall": 0.9936,
+          "f1": 0.9853
+        }
       },
       "size_mb": 260.8,
       "latency": [
         {
           "batch": 1,
-          "p50_ms": 16.93,
-          "p95_ms": 32.45,
-          "texts_per_sec": 51.9
+          "p50_ms": 33.17,
+          "p95_ms": 67.53,
+          "texts_per_sec": 27.2
         },
         {
           "batch": 8,
-          "p50_ms": 188.22,
-          "p95_ms": 322.65,
-          "texts_per_sec": 41.0
+          "p50_ms": 339.06,
+          "p95_ms": 481.28,
+          "texts_per_sec": 22.6
         },
         {
           "batch": 32,
-          "p50_ms": 1004.0,
-          "p95_ms": 1344.52,
-          "texts_per_sec": 30.5
+          "p50_ms": 1453.98,
+          "p95_ms": 2237.76,
+          "texts_per_sec": 20.6
         }
       ]
     },
     "onnx_fp32": {
       "accuracy": {
-        "precision": 0.9106,
-        "recall": 0.8693,
-        "f1": 0.8895
+        "precision": 0.9235,
+        "recall": 0.9589,
+        "f1": 0.9409
+      },
+      "per_source": {
+        "ai4privacy": {
+          "precision": 0.8975,
+          "recall": 0.9414,
+          "f1": 0.9189
+        },
+        "synth": {
+          "precision": 0.9771,
+          "recall": 0.9936,
+          "f1": 0.9853
+        }
       },
       "size_mb": 260.9,
       "latency": [
         {
           "batch": 1,
-          "p50_ms": 14.01,
-          "p95_ms": 28.06,
-          "texts_per_sec": 63.1
+          "p50_ms": 27.22,
+          "p95_ms": 58.02,
+          "texts_per_sec": 32.1
         },
         {
           "batch": 8,
-          "p50_ms": 185.34,
-          "p95_ms": 311.58,
-          "texts_per_sec": 41.2
+          "p50_ms": 234.25,
+          "p95_ms": 432.05,
+          "texts_per_sec": 31.0
         },
         {
           "batch": 32,
-          "p50_ms": 1042.55,
-          "p95_ms": 1412.17,
-          "texts_per_sec": 29.1
+          "p50_ms": 1738.49,
+          "p95_ms": 2436.1,
+          "texts_per_sec": 17.4
         }
       ]
     },
     "onnx_int8": {
       "accuracy": {
-        "precision": 0.9142,
-        "recall": 0.8667,
-        "f1": 0.8898
+        "precision": 0.9352,
+        "recall": 0.961,
+        "f1": 0.9479
+      },
+      "per_source": {
+        "ai4privacy": {
+          "precision": 0.9107,
+          "recall": 0.9446,
+          "f1": 0.9273
+        },
+        "synth": {
+          "precision": 0.9853,
+          "recall": 0.9936,
+          "f1": 0.9895
+        }
       },
       "size_mb": 65.6,
       "latency": [
         {
           "batch": 1,
-          "p50_ms": 5.67,
-          "p95_ms": 11.38,
-          "texts_per_sec": 156.0
+          "p50_ms": 10.27,
+          "p95_ms": 24.42,
+          "texts_per_sec": 82.3
         },
         {
           "batch": 8,
-          "p50_ms": 70.2,
-          "p95_ms": 129.26,
-          "texts_per_sec": 104.8
+          "p50_ms": 124.34,
+          "p95_ms": 195.11,
+          "texts_per_sec": 61.8
         },
         {
           "batch": 32,
-          "p50_ms": 427.95,
-          "p95_ms": 595.38,
-          "texts_per_sec": 70.4
+          "p50_ms": 630.34,
+          "p95_ms": 978.72,
+          "texts_per_sec": 46.6
         }
       ]
     }

@@ -17,6 +17,12 @@ _CARD = re.compile(r"\b(?:\d[ -]?){13,19}\b")
 _AADHAAR = re.compile(r"\b[2-9]\d{3}[ -]?\d{4}[ -]?\d{4}\b")
 _PAN = re.compile(r"\b[A-Z]{3}[PCHFATBLJG][A-Z]\d{4}[A-Z]\b")
 _IFSC = re.compile(r"\b[A-Z]{4}0[A-Z0-9]{6}\b")
+# UPI virtual payment address: handle@psp, with the PSP suffixes in common use
+_UPI = re.compile(
+    r"\b[\w.\-]{2,64}@(?:ok(?:hdfcbank|sbi|icici|axis)|ybl|ibl|axl|paytm|upi|apl|yapl|"
+    r"ptyes|ptsbi|pthdfc|ptaxis|jupiteraxis|fbl|waaxis|wahdfcbank|wasbi|icici|sbi|hdfcbank)\b",
+    re.IGNORECASE,
+)
 
 
 def luhn_valid(digits: str) -> bool:
@@ -49,4 +55,8 @@ def detect_rules(text: str) -> list[Entity]:
         add(m, "ID_NUMBER", 0.95)
     for m in _IFSC.finditer(text):
         add(m, "FINANCIAL", 0.93)
-    return out
+    for m in _UPI.finditer(text):
+        add(m, "FINANCIAL", 0.95)
+    # an email rule match on a UPI address is the same span; keep the more specific label
+    upi_spans = {(e.start, e.end) for e in out if e.label == "FINANCIAL"}
+    return [e for e in out if not (e.label == "EMAIL" and (e.start, e.end) in upi_spans)]

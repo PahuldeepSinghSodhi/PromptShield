@@ -14,6 +14,7 @@ import base64
 import hashlib
 import json
 import random
+import re
 import string
 import uuid
 
@@ -131,17 +132,51 @@ _PII_TEMPLATES = [
     "Vendor contact is {PERSON:name}, {PHONE:in_phone}, {ADDRESS:address}.",
 ]
 
-# Templates without PII so the model sees plenty of negatives.
+# Templates without PII so the model sees plenty of negatives, including the technical
+# prompts employees actually send (cloud services, error codes, versions), whose short
+# alphanumeric tokens (S3, EC2, v2, P1) must not look like addresses or IDs.
 _CLEAN_TEMPLATES = [
-    "Summarise the top five complaint themes from last quarter.",
-    "Write a Python function that merges two sorted lists.",
-    "What is the difference between NEFT and RTGS transfers?",
-    "Draft a polite email declining the meeting invite.",
-    "Explain how gradient boosting works in simple terms.",
-    "Our churn rate rose by 3 percent in March; suggest possible causes.",
-    "Translate 'your order has shipped' into Hindi and Tamil.",
-    "Create a checklist for onboarding a new data engineer.",
+    "Summarise the top {n} complaint themes from {period}.",
+    "Write a {lang} function that {task}.",
+    "What is the difference between {a} and {b}?",
+    "Draft a polite email declining the {event}.",
+    "Explain how {concept} works in simple terms.",
+    "Our {metric} rose by {n} percent in {month}; suggest possible causes.",
+    "Create a checklist for onboarding a new {role}.",
+    "Our {svc} {action} fails with {err}. What is wrong?",
+    "Why does {svc} in {region} return {err} after the {ver} upgrade?",
+    "Write a Terraform module for {svc} with {n} replicas in {region}.",
+    "{prio} incident: {svc} latency is {n}00 ms since build {ver}. Draft the status update.",
+    "Compare {svc} and {svc2} for a {n} TB workload.",
+    "Convert this {lang} snippet to use {lib} {ver} instead.",
+    "How do I fix '{err}' when calling the {svc} API from {lang}?",
+    "Summarise ticket {prio}-{n}{n}: {svc} pods restart every {n} minutes.",
 ]
+_FILL = {
+    "n": [str(i) for i in range(2, 10)],
+    "period": ["last quarter", "Q3", "FY24", "the last 30 days", "March"],
+    "lang": ["Python", "Java", "TypeScript", "Go", "C++", "SQL"],
+    "task": ["merges two sorted lists", "parses a CSV file", "retries failed HTTP calls", "deduplicates records"],
+    "a": ["NEFT", "TCP", "OLTP", "REST", "precision"], "b": ["RTGS", "UDP", "OLAP", "gRPC", "recall"],
+    "event": ["meeting invite", "vendor demo", "conference talk"],
+    "concept": ["gradient boosting", "Kafka partitions", "OAuth2", "vector search", "CAP theorem"],
+    "metric": ["churn rate", "p95 latency", "refund volume", "error rate"],
+    "month": ["March", "April", "Q2", "October"],
+    "role": ["data engineer", "QA analyst", "SRE", "product manager"],
+    "svc": ["S3", "EC2", "Lambda", "EKS", "RDS", "BigQuery", "GKE", "Azure Blob", "Redis", "Kafka", "SQS", "DynamoDB"],
+    "svc2": ["GCS", "ECS", "Cloud Run", "Aurora", "Snowflake", "Pub/Sub"],
+    "action": ["upload", "deployment", "health check", "batch job", "sync"],
+    "err": ["AccessDenied", "403 Forbidden", "504 Gateway Timeout", "OOMKilled", "ECONNRESET", "NoSuchBucket",
+            "ThrottlingException", "SSL handshake failed"],
+    "region": ["ap-south-1", "us-east-1", "eu-west-2", "asia-south2", "centralindia"],
+    "ver": ["v2", "v3.1", "2.4.1", "1.29", "R5", "build 4512"],
+    "prio": ["P1", "P2", "SEV2", "INC"],
+    "lib": ["pandas", "Spring Boot", "React", "NumPy", "boto3"],
+}
+
+
+def _fill_clean(template: str, rng: random.Random) -> str:
+    return re.sub(r"\{(\w+)\}", lambda m: rng.choice(_FILL[m.group(1)]), template)
 
 
 def _slot_value(kind: str, rng: random.Random, fake: Faker) -> str:
@@ -193,8 +228,52 @@ def _fill(template: str, rng: random.Random, fake: Faker) -> tuple[str, list[dic
     return "".join(out), spans
 
 
-def generate_pii_records(n: int, seed: int = 42, clean_ratio: float = 0.15) -> pd.DataFrame:
-    """Return ``n`` synthetic records with columns text, spans, source, template_id."""
+# Compositional generator: intro + 1-3 PII clauses + request. Many phrasings per entity
+# type, so sentence structure varies far more than with fixed templates and a held-out
+# test set measures new combinations rather than three arbitrary templates.
+_INTROS = ["", "Hi team, ", "Quick one: ", "Can you help? ", "Urgent - ", "FYI, ", "Hello, ", "As discussed, "]
+_CLAUSES = {
+    "PERSON": ["customer {PERSON:name}", "{PERSON:name}", "our client {PERSON:name}", "Mr/Ms {PERSON:name}",
+               "applicant {PERSON:name}", "the caller, {PERSON:name},", "employee {PERSON:name}"],
+    "EMAIL": ["email {EMAIL:email}", "({EMAIL:email})", "reachable at {EMAIL:email}", "mail id {EMAIL:email}"],
+    "PHONE": ["phone {PHONE:in_phone}", "mobile no. {PHONE:in_phone}", "call back on {PHONE:in_phone}",
+              "contact {PHONE:phone}", "WhatsApp {PHONE:in_phone}"],
+    "ADDRESS": ["living at {ADDRESS:address}", "address: {ADDRESS:address}", "ship to {ADDRESS:address}",
+                "registered office {ADDRESS:address}"],
+    "ID_NUMBER": ["PAN {ID_NUMBER:pan}", "PAN no. {ID_NUMBER:pan}", "Aadhaar {ID_NUMBER:aadhaar}",
+                  "Aadhaar number {ID_NUMBER:aadhaar}", "UID {ID_NUMBER:aadhaar}", "KYC doc {ID_NUMBER:pan}"],
+    "FINANCIAL": ["A/C {FINANCIAL:account}", "account number {FINANCIAL:account}", "acct no. {FINANCIAL:account}",
+                  "beneficiary a/c {FINANCIAL:account}", "IFSC {FINANCIAL:ifsc}", "IFSC code {FINANCIAL:ifsc}",
+                  "branch code {FINANCIAL:ifsc}", "UPI {FINANCIAL:upi}", "paid via {FINANCIAL:upi}",
+                  "card ending {FINANCIAL:card}", "refund to {FINANCIAL:account}"],
+    "DATE": ["DOB {DATE:date}", "born on {DATE:date}", "date of birth {DATE:date}"],
+    "USERNAME": ["user id {USERNAME:username}", "login {USERNAME:username}", "handle @{USERNAME:username}"],
+}
+_REQUESTS = [
+    "Please summarise the issue.", "Draft a reply.", "Can you verify these details?", "Translate this to Hindi.",
+    "What should we do next?", "Flag anything unusual.", "Write a polite follow-up.", "Update the CRM note.",
+    "", "Thanks.",
+]
+_JOINERS = [", ", " and ", "; ", " - ", ", with "]
+
+
+def _compose(rng: random.Random) -> str:
+    types = rng.sample(list(_CLAUSES), k=rng.randint(1, 3))
+    if "PERSON" not in types and rng.random() < 0.6:
+        types.insert(0, "PERSON")
+    parts = [rng.choice(_CLAUSES[t]) for t in types]
+    body = parts[0] + "".join(rng.choice(_JOINERS) + p for p in parts[1:])
+    return f"{rng.choice(_INTROS)}{body}. {rng.choice(_REQUESTS)}".strip()
+
+
+def generate_pii_records(
+    n: int, seed: int = 42, clean_ratio: float = 0.15, compositional_ratio: float = 0.55
+) -> pd.DataFrame:
+    """Return ``n`` synthetic records with columns text, spans, source, template_id.
+
+    Compositional records get ``template_id=None`` so cleaning assigns the skeleton hash
+    (text with values replaced by labels) and the grouped split works on real structure.
+    """
     rng = random.Random(seed)
     fakers = [Faker("en_IN"), Faker("en_US"), Faker("en_GB")]
     for k, f in enumerate(fakers):
@@ -202,10 +281,14 @@ def generate_pii_records(n: int, seed: int = 42, clean_ratio: float = 0.15) -> p
     rows = []
     for _ in range(n):
         fake = fakers[0] if rng.random() < 0.6 else rng.choice(fakers[1:])
-        if rng.random() < clean_ratio:
+        r = rng.random()
+        if r < clean_ratio:
             tid = rng.randrange(len(_CLEAN_TEMPLATES))
-            text, spans = _CLEAN_TEMPLATES[tid], []
+            text, spans = _fill_clean(_CLEAN_TEMPLATES[tid], rng), []
             template_id = f"synth-clean-{tid}"
+        elif r < clean_ratio + compositional_ratio:
+            text, spans = _fill(_compose(rng), rng, fake)
+            template_id = None
         else:
             tid = rng.randrange(len(_PII_TEMPLATES))
             text, spans = _fill(_PII_TEMPLATES[tid], rng, fake)

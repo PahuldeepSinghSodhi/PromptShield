@@ -1,3 +1,4 @@
+import contextlib
 import os
 import random
 import string
@@ -29,7 +30,5 @@ def client():
 
     with TestClient(app) as c:
         yield c
-    try:
+    with contextlib.suppress(OSError):
         os.remove(".pytest_promptshield.db")
-    except OSError:
-        pass

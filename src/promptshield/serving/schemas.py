@@ -67,7 +67,7 @@ class FeedbackRequest(BaseModel):
     example: str | None = Field(None, max_length=2000, description="Optional example; PII is masked before storage")
     value: str | None = Field(
         None, max_length=200,
-        description="The exact text that was wrongly flagged or missed. Used to build the masked example; never stored.",
+        description="Exact text that was wrongly flagged or missed. Used to build the masked example; never stored.",
     )
     comment: str | None = Field(None, max_length=1000)
 
