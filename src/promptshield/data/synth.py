@@ -265,6 +265,14 @@ def _secret_generators(rng: random.Random) -> list[tuple[str, list[str]]]:
         ("postgres://" + _rand(rng, string.ascii_lowercase, 6) + ":" + _fake_password(rng).replace("@", "x")
          + "@db." + _rand(rng, string.ascii_lowercase, 5) + ".internal:5432/prod",
          ["DATABASE_URL={v}", "engine = create_engine(\"{v}\")"]),
+        # vendor-style tokens with varied prefixes (GitLab's glpat- is held out for the challenge set)
+        (rng.choice(["shpat_", "npm_", "hf_", "xoxp-", "pk_live_", "rk_test_", "sq0atp-", "dop_v1_"])
+         + _rand(rng, _ALNUM, rng.randint(24, 40)),
+         ["{v}", "pasting it here {v}", "value is {v}", "try {v} instead", "registry auth {v}"]),
+        # well-known formats with no keyword nearby at all
+        ("AKIA" + _rand(rng, string.ascii_uppercase + string.digits, 16),
+         ["{v}", "use {v} for the backup job", "old one was {v}", "account {v} prod"]),
+        (_fake_jwt(rng), ["{v}", "got this back: {v}", "cookie value {v}"]),
     ]
 
 
@@ -296,7 +304,63 @@ def _negative_generators(rng: random.Random) -> list[tuple[str, list[str]]]:
          ["invoice {v} is overdue", "ref {v}"]),
         ("password_reset_" + _rand(rng, string.ascii_lowercase, 5),
          ["template name {v}", "enable {v} flow"]),
+        # placeholders and references in docs/config: secret-looking context, harmless value
+        (rng.choice(["your-api-key-here", "YOUR_API_KEY", "<your-token>", "changeme123", "xxxxxxxxxxxxxxxx",
+                     "replace_with_secret", "dummy-password", "${DB_PASSWORD}", "$GITHUB_TOKEN"]),
+         ["API_KEY={v}", "password: {v}", "token = \"{v}\"", "set SECRET_KEY={v} in your .env"]),
+        (str(rng.randint(10**7, 10**9)),
+         ["token_count={v}", "max_tokens: {v}", "session_timeout={v}"]),
+        # identifiers that sit next to key-like words but are not secrets
+        (str(uuid.UUID(int=rng.getrandbits(128))),
+         ["cache key {v}", "partition key: {v}", "dedup token {v}", "session id {v}"]),
+        ("https://" + rng.choice(["auth.example.com", "login.corp.local", "api.vendor.io"]) + "/" + _rand(rng, string.ascii_lowercase, 6),
+         ["Authorization endpoint {v}", "token_url = {v}", "redirect after login to {v}"]),
+        # personal/business IDs are PII (handled by NER + rules), not credentials
+        (rng.choice([fake_pan(rng), fake_ifsc(rng), "ORD" + _rand(rng, string.digits, 9),
+                     _rand(rng, string.ascii_uppercase, 2) + _rand(rng, string.digits, 7)]),
+         ["PAN {v}", "IFSC code {v}", "order id {v}", "passport no. {v}", "policy number {v}"]),
+        # environment variable NAMES referenced from code (the value is elsewhere)
+        (rng.choice(["OPENAI_API_KEY", "DB_PASSWORD", "AWS_SECRET_ACCESS_KEY", "GITHUB_TOKEN", "JWT_SECRET"]),
+         ["key = os.environ['{v}']", "password = getenv(\"{v}\")", "token = process.env.{v}", "secret = config['{v}']"]),
     ]
+
+
+def generate_secret_challenge(n: int, seed: int = 7) -> pd.DataFrame:
+    """Out-of-distribution evaluation set: contexts and value shapes absent from training.
+
+    Positives have no obvious keyword or use unfamiliar formats; negatives are
+    placeholders/references that sit next to secret keywords.
+    """
+    rng = random.Random(seed)
+    rows = []
+    for _ in range(n):
+        positive = rng.random() < 0.5
+        if positive:
+            value, ctx = rng.choice([
+                (_rand(rng, _ALNUM, rng.randint(28, 44)), "curl -H 'X-Auth: {v}' https://api.internal/v2/items"),
+                ("AKIA" + _rand(rng, string.ascii_uppercase + string.digits, 16), "s3 creds {v} (prod account)"),
+                ("glpat-" + _rand(rng, _ALNUM + "-_", 20), "use {v} to push to gitlab"),
+                (_fake_password(rng), "login with {v} if the other one fails"),
+                (_rand(rng, "0123456789abcdef", 32), "webhook signing value {v}"),
+                ("mongodb+srv://admin:" + _rand(rng, _ALNUM, 14) + "@cluster0.example.net", "connect via {v}"),
+                (_fake_jwt(rng), "copied from devtools: {v}"),
+            ])
+        else:
+            value, ctx = rng.choice([
+                ("<INSERT_KEY_HERE>", "API_SECRET={v}"),
+                ("sk-xxxxxxxxxxxxxxxxxxxxxxxx", "OPENAI_API_KEY={v}  # example only"),
+                ("${{ secrets.DEPLOY_TOKEN }}", "token: {v}"),
+                ("os.getenv('STRIPE_KEY')", "stripe.api_key = {v}"),
+                (f"{rng.getrandbits(160):040x}", "Merge pull request, head {v}"),
+                (str(uuid.UUID(int=rng.getrandbits(128))), "idempotency key {v}"),
+                ("password123_example", "never use something like {v} as a password"),
+                (hashlib.sha1(rng.randbytes(8)).hexdigest(), "integrity hash {v}"),
+            ])
+        text = ctx.replace("{v}", value)
+        start = text.index(value)
+        rows.append({"text": text, "candidate": value, "start": start, "end": start + len(value),
+                     "label": int(positive), "template_id": f"challenge-{ctx[:20]}"})
+    return pd.DataFrame(rows)
 
 
 _CHAT_PREFIXES = [

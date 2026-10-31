@@ -13,10 +13,12 @@ import re
 from pathlib import Path
 
 import joblib
+import numpy as np
 import pandas as pd
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.linear_model import SGDClassifier
 from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import FunctionTransformer
 
 ROOT = Path(__file__).resolve().parents[3]
 DATA = ROOT / "data" / "processed" / "ner.parquet"
@@ -83,6 +85,14 @@ def frame_to_xy(df: pd.DataFrame):
     return X, y, seqs
 
 
+def _int32_indices(X):
+    """DictVectorizer can emit int64 sparse indices, which SGDClassifier rejects."""
+    X = X.tocsr()
+    X.indices = X.indices.astype(np.int32)
+    X.indptr = X.indptr.astype(np.int32)
+    return X
+
+
 def _regroup(flat: list[str], lengths: list[int]) -> list[list[str]]:
     out, i = [], 0
     for n in lengths:
@@ -103,7 +113,8 @@ def train(max_train: int = 40_000, seed: int = 42) -> dict:
     Xte, yte, lte = frame_to_xy(te)
     model = make_pipeline(
         DictVectorizer(sparse=True),
-        SGDClassifier(loss="log_loss", alpha=1e-5, max_iter=30, class_weight="balanced", random_state=seed, n_jobs=-1),
+        FunctionTransformer(_int32_indices, accept_sparse=True),
+        SGDClassifier(loss="log_loss", alpha=1e-5, max_iter=50, class_weight=None, random_state=seed, n_jobs=-1),
     )
     model.fit(Xtr, ytr)
     pred = model.predict(Xte)

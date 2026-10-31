@@ -12,9 +12,9 @@ from pathlib import Path
 import pandas as pd
 
 from promptshield.data.clean import clean_frame
-from promptshield.data.ingest import load_ai4privacy
+from promptshield.data.ingest import drop_noisy_negatives, load_ai4privacy
 from promptshield.data.label_map import LabelMapper
-from promptshield.data.split import grouped_split
+from promptshield.data.split import grouped_split, stratified_split
 from promptshield.data.synth import generate_pii_records, generate_secret_texts
 from promptshield.data.validate import check_no_leakage, quality_report, validate_records
 
@@ -26,6 +26,7 @@ REPORTS = ROOT / "reports"
 def build_ner(max_public: int, n_synth: int, seed: int) -> tuple[pd.DataFrame, dict]:
     mapper = LabelMapper()
     public = load_ai4privacy(mapper, max_rows=max_public, seed=seed)
+    public, n_noisy = drop_noisy_negatives(public)
     synth = generate_pii_records(n_synth, seed=seed)
     df = clean_frame(pd.concat([public, synth], ignore_index=True))
     df = grouped_split(df, seed=seed)
@@ -33,15 +34,14 @@ def build_ner(max_public: int, n_synth: int, seed: int) -> tuple[pd.DataFrame, d
     check_no_leakage(df)
     report = quality_report(df)
     report["unmapped_source_labels"] = dict(mapper.unmapped.most_common())
+    report["dropped_unlabeled_rows_with_identifiers"] = n_noisy
     return df, report
 
 
 def build_secrets(n: int, seed: int) -> pd.DataFrame:
     df = generate_secret_texts(n, seed=seed)
     df = df.drop_duplicates(subset="text").reset_index(drop=True)
-    df = grouped_split(df, seed=seed)
-    check_no_leakage(df)
-    return df
+    return stratified_split(df, by="kind", seed=seed)
 
 
 def main() -> None:

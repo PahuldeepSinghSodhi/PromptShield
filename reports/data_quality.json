@@ -1,0 +1,46 @@
+{
+  "rows": 68807,
+  "by_source": {
+    "ai4privacy": 56103,
+    "synth": 12704
+  },
+  "by_split": {
+    "train": 49469,
+    "test": 10275,
+    "val": 9063
+  },
+  "rows_without_entities": 14250,
+  "entity_counts": {
+    "PERSON": 28161,
+    "ADDRESS": 17598,
+    "ID_NUMBER": 12397,
+    "FINANCIAL": 9151,
+    "EMAIL": 8956,
+    "PHONE": 8240,
+    "USERNAME": 7663,
+    "DATE": 4895,
+    "CREDENTIAL": 2282
+  },
+  "text_len_chars": {
+    "count": 68807.0,
+    "mean": 139.9,
+    "std": 65.3,
+    "min": 12.0,
+    "25%": 88.0,
+    "50%": 122.0,
+    "75%": 175.0,
+    "max": 1377.0
+  },
+  "n_templates": 56115,
+  "unmapped_source_labels": {},
+  "dropped_unlabeled_rows_with_identifiers": 3896,
+  "secrets": {
+    "rows": 38752,
+    "positive_rate": 0.463,
+    "by_split": {
+      "train": 27238,
+      "test": 6217,
+      "val": 5297
+    }
+  }
+}

@@ -21,6 +21,7 @@ from sklearn.model_selection import GridSearchCV, GroupKFold
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
+from promptshield.data.synth import generate_secret_challenge
 from promptshield.features.secret_features import FEATURE_NAMES, Candidate, extract_candidates, featurize
 from promptshield.types import Entity
 
@@ -52,8 +53,10 @@ def pick_threshold(y: np.ndarray, proba: np.ndarray, min_precision: float = 0.98
     ok = np.where(prec[:-1] >= min_precision)[0]
     if ok.size == 0:
         return 0.5
-    best = ok[np.argmax(rec[:-1][ok])]
-    return float(thr[best])
+    best_recall = rec[:-1][ok].max()
+    # among equally good recalls take the highest threshold: fewer false alarms on unseen data
+    tied = ok[rec[:-1][ok] >= best_recall - 1e-9]
+    return float(thr[tied].max())
 
 
 def evaluate(y: np.ndarray, proba: np.ndarray, threshold: float) -> dict:
@@ -114,6 +117,11 @@ def train() -> dict:
         ),
     }
 
+    # out-of-distribution challenge set: contexts and formats never seen in training
+    ch = generate_secret_challenge(2000).assign(split="challenge")
+    ch_cands, y_ch, _, _ = candidates_frame(ch)
+    X_ch = featurize(ch_cands)
+
     results, best_name, best_ap = {}, None, -1.0
     for name, search in searches.items():
         search.fit(X[tr], y[tr], groups=groups[tr])
@@ -123,6 +131,7 @@ def train() -> dict:
             "best_params": search.best_params_,
             "val": evaluate(y[va], val_proba, thr),
             "test": evaluate(y[te], search.predict_proba(X[te])[:, 1], thr),
+            "challenge_ood": evaluate(y_ch, search.predict_proba(X_ch)[:, 1], thr),
         }
         if results[name]["val"]["average_precision"] > best_ap:
             best_name, best_ap = name, results[name]["val"]["average_precision"]

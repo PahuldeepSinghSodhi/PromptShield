@@ -71,8 +71,15 @@ FEATURE_NAMES = [
     "frac_digit", "frac_symbol", "n_char_classes", "is_hex", "is_b64_charset",
     "digit_letter_switch_rate", "max_digit_run_frac", "n_dots", "has_scheme_creds",
     "known_prefix", "left_secret_kw", "left_benign_kw", "key_secret_kw", "has_key",
-    "looks_like_word", "has_path_sep",
+    "looks_like_word", "has_path_sep", "placeholder_hint", "max_char_frac", "is_numeric",
+    "vendor_prefix_shape", "is_uuid", "is_plain_url", "wrapped_by_template_syntax",
 ]
+
+_VENDOR_SHAPE = re.compile(r"^[A-Za-z]{2,8}[-_](?:[A-Za-z]{2,6}[-_])?[A-Za-z0-9_\-]{16,}$")
+_UUID = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
+_PLACEHOLDER_HINTS = ("your", "example", "placeholder", "changeme", "replace", "dummy", "insert",
+                      "xxxx", "sample", "<", ">", "${", "$", "getenv", "environ", "secrets.")
 
 
 def _row(c: Candidate) -> list[float]:
@@ -114,6 +121,14 @@ def _row(c: Candidate) -> list[float]:
         float(bool(c.key)),
         float(v.isalpha() or bool(re.fullmatch(r"[A-Za-z]+(_[A-Za-z]+)+", v))),
         float("/" in v or "\\" in v),
+        float(any(h in v.lower() for h in _PLACEHOLDER_HINTS)),
+        float(np.bincount(arr).max() / n) if arr.size else 0.0,
+        float(v.isdigit()),
+        # vendor-style tokens (prefix + separator + long random tail) that are not plain words
+        float(bool(_VENDOR_SHAPE.match(v)) and digit > 0),
+        float(bool(_UUID.match(v))),
+        float(v.startswith(("http://", "https://")) and "@" not in v),
+        float(c.left.rstrip().endswith(("<", "${", "{{", "{", "$"))),
     ]
 
 
