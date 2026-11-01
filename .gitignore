@@ -20,3 +20,4 @@ __pycache__/
 *.db-wal
 .env
 artifacts.live-backup/
+.claude/
