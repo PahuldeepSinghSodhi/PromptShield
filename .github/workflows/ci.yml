@@ -22,7 +22,7 @@ jobs:
           mkdir -p data/processed
           python -c "from promptshield.data.build import build_secrets; build_secrets(6000, 42).to_parquet('data/processed/secrets.parquet', index=False)"
           python -m promptshield.models.secret_detector
-      - name: Tests (NER model tests skip: the 66 MB model is not in git)
+      - name: Tests (NER model tests skip because the 66 MB model is not in git)
         run: pytest -q --cov=promptshield --cov-report=term-missing:skip-covered
 
   docker:
