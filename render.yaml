@@ -1,0 +1,13 @@
+# Render Blueprint for the free live demo (New > Blueprint > pick this repo)
+services:
+  - type: web
+    name: promptshield
+    runtime: docker
+    plan: free
+    dockerfilePath: ./deploy/demo/Dockerfile
+    dockerContext: .
+    healthCheckPath: /v1/health
+    autoDeploy: true
+    envVars:
+      - key: PROMPTSHIELD_NER_THREADS
+        value: "1"
