@@ -51,7 +51,7 @@ jobs:
           curl -sf localhost:8000/v1/redact -H 'X-API-Key: dev-key' -H 'Content-Type: application/json' \
             -d '{"text":"Mail rahul@example.com about PAN ABCPM1234K"}' | tee redact.json
           grep -q '\[EMAIL_1\]' redact.json
-          KEY="AKIA$(head -c 64 /dev/urandom | tr -dc 'A-Z2-7' | head -c 16)"
+          KEY="AKIA$(head -c 4096 /dev/urandom | tr -dc 'A-Z2-7' | head -c 16)"
           curl -sf localhost:8000/v1/proxy/chat -H 'X-API-Key: dev-key' -H 'Content-Type: application/json' \
             -d "{\"messages\":[{\"role\":\"user\",\"content\":\"AWS_ACCESS_KEY_ID=$KEY\"}]}" | tee proxy.json
           grep -q '"action":"block"' proxy.json
