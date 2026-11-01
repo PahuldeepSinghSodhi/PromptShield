@@ -4,7 +4,7 @@
 
 Employees paste customer records, API keys and internal data into ChatGPT, Claude and Copilot every day. PromptShield sits between users and any LLM. It detects sensitive data with a fine-tuned **PyTorch** NER model, a **scikit-learn** secret detector and checksum rules. Each request is then **allowed, redacted or blocked**. Redacted values are swapped for placeholders before the prompt leaves the company, and restored in the LLM's reply, so the user still gets a complete answer.
 
-![CI](https://img.shields.io/badge/tests-67%20passing-1f8a4c) ![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13-2f5bea) ![ONNX](https://img.shields.io/badge/serving-ONNX%20INT8-2f5bea)
+[![CI](https://github.com/PahuldeepSinghSodhi/PromptShield/actions/workflows/ci.yml/badge.svg)](https://github.com/PahuldeepSinghSodhi/PromptShield/actions/workflows/ci.yml) ![Tests](https://img.shields.io/badge/tests-67%20passing-1f8a4c) ![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13-2f5bea) ![ONNX](https://img.shields.io/badge/serving-ONNX%20INT8-2f5bea)
 
 ## Example
 
